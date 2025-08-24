@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlbionMarketBot", "AlbionMarketBot\AlbionMarketBot.csproj", "{CDFD6BB2-13A0-4311-AB22-96E5C1649817}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot", "Bot\Bot.csproj", "{CDFD6BB2-13A0-4311-AB22-96E5C1649817}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
