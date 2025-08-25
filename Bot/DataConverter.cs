@@ -1,41 +1,27 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace PhotonPackageParser;
-
 public static class DataConverter
 {
-    public static void ConvertRawData()
+    public static JObject ConvertRawData(JArray marketData)
     {
         long conversionFactor = 10000;
-        
-        string fileName = "out.json";
-        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
-        
-        JArray marketData = JArray.Parse(File.ReadAllText(path));
 
         var maxPerItem = marketData
-            .Where(tok => tok["ItemTypeId"] != null && tok["UnitPriceSilver"] != null && (int)tok["QualityLevel"] < 4)
-            .GroupBy(tok => (string)tok["ItemTypeId"])
-            .ToDictionary(
-                g => g.Key,
-                g => {
-                    long maxRaw = g
-                        .Select(x => {
-                            var v = x["UnitPriceSilver"];
-                            if (v == null) return 0L;
-                            try { return (long) v; } catch {}
-                            try { return Convert.ToInt64((string)v); } catch {}
-                            try { return Convert.ToInt64((double)v); } catch {}
-                            return 0L;
-                        })
-                        .Max();
-                    return maxRaw / conversionFactor;
-                }
-            );
+            .Where(tok =>
+                tok["ItemTypeId"] != null &&
+                tok["UnitPriceSilver"] != null &&
+                tok["QualityLevel"] != null &&
+                tok.Value<int?>("QualityLevel") < 4
+            )
+            .Select(tok => new
+            {
+                Key = tok["ItemTypeId"]?.Value<string>() ?? throw new InvalidOperationException("missing ItemTypeId"),
+                Price = tok["UnitPriceSilver"]?.Value<long>() ?? 0L
+            })
+            .GroupBy(r => r.Key)
+            .ToDictionary(g => g.Key, g => g.Max(r => r.Price) / conversionFactor);          
 
-        // Convert to JObject for pretty JSON output
-        var resultObj = JObject.FromObject(maxPerItem);
-
-        File.WriteAllText("max_prices_by_item.json", resultObj.ToString());
+        // Convert to JObject
+        return JObject.FromObject(maxPerItem);
     }
 }

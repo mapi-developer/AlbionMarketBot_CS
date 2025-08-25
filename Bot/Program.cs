@@ -1,11 +1,6 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PhotonPackageParser;
-using SharpPcap;
+﻿using SharpPcap;    
 
-CaptureManager sniffer = new CaptureManager(device: CaptureDeviceList.Instance[3], "out");
+AlbionObserver sniffer = new AlbionObserver(device: CaptureDeviceList.Instance[3]);
 sniffer.Start();
-Console.ReadLine();      // <- keeps process alive
+Console.ReadLine();
 sniffer.Stop();
-
-DataConverter.ConvertRawData();
