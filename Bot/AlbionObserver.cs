@@ -11,6 +11,7 @@ public class AlbionObserver
     private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private Task _worker;
     private Parser _parser;
+    private GoogleSheetsUpdater _updater;
     public JArray tempData = new JArray();
 
     public AlbionObserver(ICaptureDevice device)
@@ -19,6 +20,7 @@ public class AlbionObserver
 
         _worker = Task.Factory.StartNew(ProcessPayloads, TaskCreationOptions.LongRunning);
         _parser = new Parser(this);
+        _updater = new GoogleSheetsUpdater();
     }
 
     public void Start()
@@ -46,7 +48,9 @@ public class AlbionObserver
         try { _worker.Wait(2000); } catch { }
 
         JObject resultObj = DataConverter.ConvertRawData(tempData);
-        File.WriteAllText("max_prices_by_item.json", resultObj.ToString());
+
+        Dictionary<string, int> markretData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
+        _updater.UpdateGoogleSheet(markretData);
 
         Console.WriteLine("Capture stopped.");
     }
