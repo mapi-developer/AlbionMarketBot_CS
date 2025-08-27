@@ -1,0 +1,15 @@
+{
+    "market_search": [750, 400],
+    "market_search_reset": [925, 400],
+    "market_category": [1025, 400],
+    "market_tier": [1260, 400],
+    "market_enchantment": [1445, 400],
+    "market_quality": [1700, 400],
+    "market_category_reset": [1830, 400],
+    "market_category_all": [1060, 440],
+    "market_tier_all": [1260, 440],
+    "market_enchantment_all": [1445, 440],
+    "market_quality_all": [1700, 440],
+    "market_next_page": [1328, 1313],
+    "market_previous_page": [1231, 1317]
+}
