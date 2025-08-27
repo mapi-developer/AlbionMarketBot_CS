@@ -57,14 +57,8 @@ class GoogleSheetsUpdater
             matrix.Add(emptyRow);
         }
 
-        // copy date data column
-        for (int r = 0; r < maxColumns; r++)
-        {
-            if (rows[r].Count > 0)
-                matrix[r][0] = rows[r][0]?.ToString() ?? "";
-            else
-                matrix[r][0] = "";
-        }
+        matrix[0][0] = rows[0][0]?.ToString() ?? "";
+        matrix[1][0] = DateTime.UtcNow;
 
         //loop through item categories
         for (int col = 1; col < maxColumns; col += 2)
