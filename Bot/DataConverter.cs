@@ -2,7 +2,7 @@
 
 public static class DataConverter
 {
-    public static JObject ConvertRawData(JArray marketData)
+    public static JObject ConvertRawData(JArray marketData, string orderType = "offer")
     {
         long conversionFactor = 10000;
 
@@ -11,6 +11,7 @@ public static class DataConverter
                 tok["ItemTypeId"] != null &&
                 tok["UnitPriceSilver"] != null &&
                 tok["QualityLevel"] != null &&
+                tok["AuctionType"].ToString() == orderType &&
                 tok.Value<int?>("QualityLevel") < 4
             )
             .Select(tok => new

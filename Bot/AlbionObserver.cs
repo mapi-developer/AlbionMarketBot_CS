@@ -3,16 +3,18 @@ using SharpPcap;
 using PacketDotNet;
 using PhotonPackageParser;
 using Newtonsoft.Json.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 public class AlbionObserver
 {
+    public string observingType = "offer"; // "offer" or "request"
+    public JArray tempData = new JArray();
     private readonly ICaptureDevice _device;
     private readonly BlockingCollection<byte[]> _payloadQueue = new BlockingCollection<byte[]>(10000);
     private readonly CancellationTokenSource _cts = new CancellationTokenSource();
     private Task _worker;
     private Parser _parser;
-    private GoogleSheetsUpdater _updater;
-    public JArray tempData = new JArray();
+    private GoogleSheetsHandler _updater;
 
     public AlbionObserver(ICaptureDevice device)
     {
@@ -20,11 +22,12 @@ public class AlbionObserver
 
         _worker = Task.Factory.StartNew(ProcessPayloads, TaskCreationOptions.LongRunning);
         _parser = new Parser(this);
-        _updater = new GoogleSheetsUpdater();
+        _updater = new GoogleSheetsHandler();
     }
 
-    public void Start()
+    public void Start(string observingType)
     {
+        this.observingType = observingType;
         _device.Open(mode: DeviceModes.Promiscuous | DeviceModes.DataTransferUdp | DeviceModes.NoCaptureLocal, read_timeout: 1000);
 
         try { _device.Filter = "udp port 5056"; } catch { /* ignore if not supported here */ }
@@ -47,13 +50,24 @@ public class AlbionObserver
         _payloadQueue.CompleteAdding();
         try { _worker.Wait(2000); } catch { }
 
-        JObject resultObj = DataConverter.ConvertRawData(tempData);
+        JObject resultObj = DataConverter.ConvertRawData(marketData: tempData, orderType: observingType);
+        Dictionary<string, int> marketData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
 
-        Dictionary<string, int> markretData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
-        _updater.UpdateGoogleSheet(markretData);
+        if (observingType == "offer")
+        {
+            _updater.UpdateGoogleSheet(marketData);
+        }
 
         Console.WriteLine("Capture stopped.");
     }
+
+    public Dictionary<string, int> GetRequestPrices()
+    {
+        JArray data = new JArray(tempData);
+        JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: "request");
+        tempData.Clear();
+        return resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
+    } 
 
     private void Device_OnPacketArrival(object sender, PacketCapture e)
     {

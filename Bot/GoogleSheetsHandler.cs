@@ -6,14 +6,14 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Newtonsoft.Json.Linq;
 
-class GoogleSheetsUpdater
+class GoogleSheetsHandler
 {
     private Dictionary<string, string>? _itemsNaming;
     private GoogleCredential _credential;
     private SheetsService _service;
     private string _sheetId;
     private string _sheetName;
-    public GoogleSheetsUpdater(
+    public GoogleSheetsHandler(
         string applicationName = "AlbionMarketBotDB",
         string sheetId = "1aQaE_pVeMpvxLUEIBhQQlgrqF4fyn1wwLGDtgXQrHQ0",
         string sheetName = "Prices Caerleon")
@@ -43,7 +43,7 @@ class GoogleSheetsUpdater
 
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AU").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:ZZ").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;
@@ -64,7 +64,7 @@ class GoogleSheetsUpdater
         for (int col = 1; col < maxColumns; col += 2)
         {
             matrix[0][col] = rows[0][col].ToString();
-            matrix[0][col+1] = rows[0][col+1].ToString();
+            matrix[0][col + 1] = rows[0][col + 1].ToString();
 
             //loop through items in category
             for (int r = 1; r < rowCount; r++)
@@ -100,12 +100,11 @@ class GoogleSheetsUpdater
                     matrix[r][col + 1] = nextCellValue;
                 }
             }
-             
         }
 
         //Console.WriteLine($"{maxColumns}, {matrix.Count}");
 
-        ValueRange valuesToUpdate = new ValueRange { Range = $"{_sheetName}!A1:AU", Values = matrix };
+        ValueRange valuesToUpdate = new ValueRange { Range = $"{_sheetName}!A1:ZZ", Values = matrix };
         var batchUpdate = new BatchUpdateValuesRequest
         {
             Data = new List<ValueRange> { valuesToUpdate },
@@ -115,5 +114,50 @@ class GoogleSheetsUpdater
         var batchResult = _service.Spreadsheets.Values.BatchUpdate(batchUpdate, _sheetId).Execute();
 
         Console.WriteLine($"Rectangular batch updated: {batchResult.TotalUpdatedCells} cells.");
+    }
+
+    public void UpdateLocalDataFromGoogleSheets()
+    {
+        Dictionary<string, int> marketData = new Dictionary<string, int>();
+        var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
+
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:ZZ").Execute();
+        IList<IList<object>>? rows = valuesResponse.Values;
+
+        int rowCount = rows.Count;
+        int maxColumns = rows.Max(r => r.Count);
+
+        for (int col = 1; col < maxColumns; col += 2)
+        {
+            //loop through items in category
+            for (int r = 1; r < rowCount; r++)
+            {
+                //Console.WriteLine($"{r} -- {col} -- {col + 1}");
+                string cellValue = (col < rows[r].Count) ? (rows[r][col]?.ToString() ?? "") : "";
+                string nextCellValue = (col + 1 < rows[r].Count) ? (rows[r][col + 1]?.ToString() ?? "") : "";
+
+                if (cellValue != "" && nextCellValue != "")
+                {
+                    int itemPrice = int.Parse(nextCellValue);
+
+                    int enchantmentLevelSplit = cellValue.LastIndexOf('_');
+                    int TierSplit = cellValue.LastIndexOf('_', enchantmentLevelSplit - 1);
+
+                    string itemEnchantmentLevel = cellValue.Substring(enchantmentLevelSplit + 1);
+                    string itemTier = cellValue.Substring(TierSplit + 1, enchantmentLevelSplit - TierSplit - 1);
+                    string itemName = cellValue.Substring(0, TierSplit);
+
+                    string itemDataBaseName = _itemsNaming[itemName];
+                    string itemEnchantString = int.Parse(itemEnchantmentLevel) > 0 ? $"@{itemEnchantmentLevel}" : "";
+                    string itemPriceKey = $"T{itemTier}{itemDataBaseName}{itemEnchantString}";
+
+                    marketData[itemPriceKey] = itemPrice;
+                }
+            }
+        }
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string json = JsonSerializer.Serialize(marketData, options);
+        File.WriteAllText("max_prices_by_item.json", json);
     }
 }
