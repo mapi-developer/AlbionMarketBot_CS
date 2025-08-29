@@ -25,7 +25,7 @@ public class AlbionObserver
         _updater = new GoogleSheetsHandler();
     }
 
-    public void Start(string observingType)
+    public void Start(string observingType = "offer")
     {
         this.observingType = observingType;
         _device.Open(mode: DeviceModes.Promiscuous | DeviceModes.DataTransferUdp | DeviceModes.NoCaptureLocal, read_timeout: 1000);
@@ -50,24 +50,28 @@ public class AlbionObserver
         _payloadQueue.CompleteAdding();
         try { _worker.Wait(2000); } catch { }
 
-        JObject resultObj = DataConverter.ConvertRawData(marketData: tempData, orderType: observingType);
-        Dictionary<string, int> marketData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
-
-        if (observingType == "offer")
-        {
-            _updater.UpdateGoogleSheet(marketData);
-        }
-
         Console.WriteLine("Capture stopped.");
     }
 
     public Dictionary<string, int> GetRequestPrices()
     {
+        try { _worker.Wait(100); } catch { }
         JArray data = new JArray(tempData);
         JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: "request");
         tempData.Clear();
         return resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
-    } 
+    }
+
+    public void ResetTempData()
+    {
+        try { _worker.Wait(100); } catch { }
+        JArray data = new JArray(tempData);
+        JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: observingType);
+        Dictionary<string, int> marketData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
+
+        _updater.UpdateGoogleSheet(marketData: marketData);
+        tempData.Clear();
+    }
 
     private void Device_OnPacketArrival(object sender, PacketCapture e)
     {

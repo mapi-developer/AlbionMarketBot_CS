@@ -40,19 +40,19 @@ class PriceChecker
 
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:ZZ").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AD").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;
         int maxColumns = rows.Max(r => r.Count);
+
+        _observer.Start(observingType: "request");
 
         for (int col = 0; col < maxColumns; col += 1)
         {
             string categoryName = (col < rows[0].Count) ? (rows[0][col]?.ToString() ?? "") : "";
             if (categoriesToUpdate == null || (categoryName != "" && categoriesToUpdate.Contains(categoryName)))
             {
-                _observer.Start(observingType: "offer");
-
                 for (int r = 1; r < rowCount; r++)
                 {
                     string cellValue = (col < rows[r].Count) ? (rows[r][col]?.ToString() ?? "") : "";
@@ -66,7 +66,8 @@ class PriceChecker
                     }
                 }
 
-                _observer.Stop();
+                _observer.ResetTempData();
+                Thread.Sleep(1000);
             }
         }
     }

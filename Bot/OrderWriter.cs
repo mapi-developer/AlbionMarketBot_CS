@@ -67,21 +67,20 @@ public class OrderWriter
 
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:ZZ").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AD").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;
         int maxColumns = rows.Max(r => r.Count);
 
         _marketController.ChangeTab("create_buy_order");
+        _observer.Start(observingType: "request");
 
         for (int col = 0; col < maxColumns; col += 1)
         {
             string categoryName = (col < rows[0].Count) ? (rows[0][col]?.ToString() ?? "") : "";
             if (categories == null || (categoryName != "" && categories.Contains(categoryName)))
             {
-                _observer.Start(observingType: "request");
-
                 for (int r = 1; r < rowCount; r++)
                 {
                     string cellValue = (col < rows[r].Count) ? (rows[r][col]?.ToString() ?? "") : "";
@@ -102,7 +101,14 @@ public class OrderWriter
                                         Thread.Sleep(300);
 
                                         string itemDataBaseName = $"T{tier}{_itemsNaming[cellValue.ToLower()]}{((enchantment > 0) ? $"@{enchantment}" : "")}";
-                                        int requestPrice = _observer.GetRequestPrices()[itemDataBaseName];
+                                        int requestPrice = -1;
+                                        try { requestPrice = _observer.GetRequestPrices()[itemDataBaseName]; } catch { }
+
+                                        if (requestPrice == -1)
+                                        {
+                                            _marketController.ClickButton(buttonTitle: "close_order_popup");
+                                            continue;
+                                        }
 
                                         decimal profitRate = GetOrderProfitRate(blackMarketData[itemDataBaseName], requestPrice + 1);
 
@@ -125,8 +131,6 @@ public class OrderWriter
                         }
                     }
                 }
-
-                _observer.Stop();
             }
         }
     }

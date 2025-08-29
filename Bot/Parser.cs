@@ -39,7 +39,10 @@ public class Parser : PhotonParser
                     jArray.Add(obj);
                 }
 
-                foreach (var it in jArray) _observer.tempData.Add(it);
+                foreach (var it in jArray)
+                {
+                    _observer.tempData.Add(it);
+                }
             }
 
         }

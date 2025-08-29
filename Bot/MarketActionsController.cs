@@ -31,8 +31,8 @@ class MarketActionsController
         _sender.LeftClick(_mousePositions["market_search"]);
 
         _sender.TypeText(
-            text: searchTitle,
-            delayMs: searchTitle.Length < 8 ? 50 : 25
+            text: searchTitle.Length < 8 ? searchTitle + "  " : searchTitle,
+            delayMs: searchTitle.Length < 8 ? 60 : 35
         );
         _sender.KeyPress(WindowsInput.VirtualKeyCode.RETURN);
     }
