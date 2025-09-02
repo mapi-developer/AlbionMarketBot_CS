@@ -32,11 +32,13 @@ class GoogleSheetsHandler
         _itemsNaming = JsonSerializer.Deserialize<Dictionary<string, string>>(itemsNamingJson, options);
     }
 
-    public void UpdateGoogleSheet(Dictionary<string, int> marketData = null)
+    public void UpdateGoogleSheet(Dictionary<string, int> marketData = null, string cityName = "Caerleon")
     {
+        _sheetName = $"Prices {cityName}";
+
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AU").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:BI").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;
@@ -66,18 +68,16 @@ class GoogleSheetsHandler
                 string cellValue = (col < rows[r].Count) ? (rows[r][col]?.ToString() ?? "") : "";
                 string nextCellValue = (col + 1 < rows[r].Count) ? (rows[r][col + 1]?.ToString() ?? "") : "";
                 int oldItemPrice;
-
+                
                 try
                 {
                     oldItemPrice = int.Parse(nextCellValue);
-
                     int enchantmentLevelSplit = cellValue.LastIndexOf('_');
                     int TierSplit = cellValue.LastIndexOf('_', enchantmentLevelSplit - 1);
 
                     string itemEnchantmentLevel = cellValue.Substring(enchantmentLevelSplit + 1);
                     string itemTier = cellValue.Substring(TierSplit + 1, enchantmentLevelSplit - TierSplit - 1);
                     string itemName = cellValue.Substring(0, TierSplit);
-
                     string itemDataBaseName = $"T{itemTier}{_itemsNaming[itemName]}{((int.Parse(itemEnchantmentLevel) > 0) ? $"@{itemEnchantmentLevel}" : "")}";
 
                     nextCellValue = marketData[itemDataBaseName].ToString();
@@ -95,7 +95,7 @@ class GoogleSheetsHandler
 
         //Console.WriteLine($"{maxColumns}, {matrix.Count}");
 
-        ValueRange valuesToUpdate = new ValueRange { Range = $"{_sheetName}!A1:AU", Values = matrix };
+        ValueRange valuesToUpdate = new ValueRange { Range = $"{_sheetName}!A1:BI", Values = matrix };
         var batchUpdate = new BatchUpdateValuesRequest
         {
             Data = new List<ValueRange> { valuesToUpdate },
@@ -107,12 +107,13 @@ class GoogleSheetsHandler
         Console.WriteLine($"Rectangular batch updated: {batchResult.TotalUpdatedCells} cells.");
     }
 
-    public void UpdateLocalDataFromGoogleSheets()
+    public void UpdateLocalDataFromGoogleSheets(string cityName = "Caerleon")
     {
+        _sheetName = $"Prices {cityName}";
         Dictionary<string, int> marketData = new Dictionary<string, int>();
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AU").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:BI").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;

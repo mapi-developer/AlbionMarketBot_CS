@@ -35,8 +35,10 @@ public class OrderWriter
     public OrderWriter(
         string applicationName = "AlbionMarketBotDB",
         string sheetId = "1aQaE_pVeMpvxLUEIBhQQlgrqF4fyn1wwLGDtgXQrHQ0",
-        string sheetName = "ItemsList")
+        string sheetName = "ItemsList",
+        decimal minimalProfitRateToOrder = 0.8m)
     {
+        _minimalProfitRateToOrder = minimalProfitRateToOrder;
         _credential = GoogleCredential.FromFile("items-prices-albion-credentials.json").CreateScoped(SheetsService.Scope.Spreadsheets);
         _service = new SheetsService(new BaseClientService.Initializer()
         {
@@ -56,9 +58,9 @@ public class OrderWriter
         _itemsNaming = JsonSerializer.Deserialize<Dictionary<string, string>>(itemsNamingJson, options);
     }
 
-    public void MakeOrders(string[]? categories = null, int[]? tiers = null, int[]? enchantments = null)
+    public void MakeOrders(string cityName = "Caerleon", string[]? categories = null, int[]? tiers = null, int[]? enchantments = null)
     {
-        _updater.UpdateLocalDataFromGoogleSheets();
+        _updater.UpdateLocalDataFromGoogleSheets(cityName: cityName);
         _sender.SetForeground();
 
         string marketJson = File.ReadAllText("max_prices_by_item.json");

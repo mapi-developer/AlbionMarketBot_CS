@@ -34,7 +34,7 @@ class PriceChecker
         _marketController = new MarketActionsController(_sender);
     }
 
-    public void UpdatePrices(string[]? categoriesToUpdate = null)
+    public void UpdatePrices(string[]? categoriesToUpdate = null, string cityName = "Caerleon")
     {
         _sender.SetForeground();
 
@@ -46,7 +46,7 @@ class PriceChecker
         int rowCount = rows.Count;
         int maxColumns = rows.Max(r => r.Count);
 
-        _observer.Start(observingType: "request");
+        _observer.Start(observingType: cityName == "Caerleon" ? "request" : "offer");
 
         for (int col = 0; col < maxColumns; col += 1)
         {
@@ -59,15 +59,30 @@ class PriceChecker
                     if (cellValue != "")
                     {
                         _marketController.SearchItem(cellValue);
-                        for (int i = 0; i < 10; i++)
+                        if (cityName == "Caerleon")
                         {
-                            _marketController.ChangePage();
+                            for (int i = 0; i < 10; i++)
+                            {
+                                _marketController.ChangePage();
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 4; i < 5; i++)
+                            {
+                                _marketController.ChooseTier(tierValue: i);
+                                for (int y = 1; y < 2; y++)
+                                {
+                                    _marketController.ChooseEnchantment(enchantmentValue: y);
+                                    Thread.Sleep(100);
+                                }
+                            }
                         }
                     }
                 }
 
-                _observer.ResetTempData();
-                Thread.Sleep(1000);
+                _observer.ResetTempData(cityName: cityName);
+                Thread.Sleep(100);
             }
         }
     }

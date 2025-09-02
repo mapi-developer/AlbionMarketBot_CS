@@ -3,7 +3,6 @@ using SharpPcap;
 using PacketDotNet;
 using PhotonPackageParser;
 using Newtonsoft.Json.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 public class AlbionObserver
 {
@@ -55,21 +54,22 @@ public class AlbionObserver
 
     public Dictionary<string, int> GetRequestPrices()
     {
-        try { _worker.Wait(100); } catch { }
+        try { _worker.Wait(300); } catch { }
         JArray data = new JArray(tempData);
         JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: "request");
         tempData.Clear();
         return resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
     }
 
-    public void ResetTempData()
+    public void ResetTempData(string cityName = "Caerleon")
     {
-        try { _worker.Wait(100); } catch { }
+        int timeWait = cityName == "Caerleon" ? 100 : 500;
+        try { _worker.Wait(timeWait); } catch { }
         JArray data = new JArray(tempData);
         JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: observingType);
         Dictionary<string, int> marketData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
 
-        _updater.UpdateGoogleSheet(marketData: marketData);
+        _updater.UpdateGoogleSheet(marketData: marketData, cityName: cityName);
         tempData.Clear();
     }
 
@@ -102,6 +102,7 @@ public class AlbionObserver
         {
             foreach (var payload in _payloadQueue.GetConsumingEnumerable(_cts.Token))
             {
+                //_parser.ReceivePacket(payload);
                 _parser.ReceivePacket(payload);
             }
         }
