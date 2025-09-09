@@ -41,6 +41,11 @@ public class InputSender
         Thread.Sleep(_afterActionDelayMs);
     }
 
+    public void ScrollMouse(int scrollingAmount)
+    {
+        _simulator.Mouse.VerticalScroll(scrollingAmount);
+    }
+
     public void LeftClick(int[]? position)
     {
         if (position != null)

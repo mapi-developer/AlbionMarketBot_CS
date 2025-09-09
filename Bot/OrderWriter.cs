@@ -58,10 +58,12 @@ public class OrderWriter
         _itemsNaming = JsonSerializer.Deserialize<Dictionary<string, string>>(itemsNamingJson, options);
     }
 
-    public void MakeOrders(string cityName = "Caerleon", string[]? categories = null, int[]? tiers = null, int[]? enchantments = null)
+    public void MakeOrders(bool removeOldOrders, string cityName = "Caerleon", string[]? categories = null, int[]? tiers = null, int[]? enchantments = null)
     {
         _updater.UpdateLocalDataFromGoogleSheets(cityName: cityName);
         _sender.SetForeground();
+
+        if (removeOldOrders == true) RemoveOldOrders();
 
         string marketJson = File.ReadAllText("max_prices_by_item.json");
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -114,6 +116,8 @@ public class OrderWriter
 
                                         decimal profitRate = GetOrderProfitRate(blackMarketData[itemDataBaseName], requestPrice + 1);
 
+                                        Console.WriteLine($"{cellValue}_{tier}_{enchantment} - {requestPrice} - {profitRate}");
+
                                         if (profitRate >= _minimalProfitRateToOrder)
                                         {
                                             int itemToBuyAmount = GetItemAmountToOrder(requestPrice);
@@ -134,6 +138,22 @@ public class OrderWriter
                     }
                 }
             }
+        }
+
+        _observer.Stop();
+    }
+
+    private void RemoveOldOrders()
+    {
+        _marketController.ChangeTab("my_orders_tab");
+
+        for (int i = 0; i < 10; i++)
+        {
+            for (int x = 0; x < 30; x++)
+            {
+                _marketController.ClickButton("cancel_order");
+            }
+            _marketController.ScrollUp();
         }
     }
 

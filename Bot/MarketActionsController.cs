@@ -14,6 +14,11 @@ class MarketActionsController
         _mousePositions = JsonSerializer.Deserialize<Dictionary<string, int[]>>(mousePositionsJson, options);
     }
 
+    public void ScrollUp()
+    {
+        _sender.ScrollMouse(10);
+    }
+
     public void ResetFilters()
     {
         _sender.LeftClick(_mousePositions["market_category_reset"]);
