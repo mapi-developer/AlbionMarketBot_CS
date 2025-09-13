@@ -14,6 +14,7 @@ public class AlbionObserver
     private Task _worker;
     private Parser _parser;
     private GoogleSheetsHandler _updater;
+    private PosatgreSQLHandler _sqlHandler;
 
     public AlbionObserver(ICaptureDevice device)
     {
@@ -22,6 +23,7 @@ public class AlbionObserver
         _worker = Task.Factory.StartNew(ProcessPayloads, TaskCreationOptions.LongRunning);
         _parser = new Parser(this);
         _updater = new GoogleSheetsHandler();
+        _sqlHandler = new PosatgreSQLHandler();
     }
 
     public void Start(string observingType = "offer")
@@ -63,13 +65,14 @@ public class AlbionObserver
 
     public void ResetTempData(string cityName = "Caerleon")
     {
-        int timeWait = cityName == "Caerleon" ? 100 : 500;
+        int timeWait = cityName == "Caerleon" ? 100 : 300;
         try { _worker.Wait(timeWait); } catch { }
         JArray data = new JArray(tempData);
         JObject resultObj = DataConverter.ConvertRawData(marketData: data, orderType: observingType);
         Dictionary<string, int> marketData = resultObj.Properties().ToDictionary(p => p.Name, p => (int)p.Value);
 
         _updater.UpdateGoogleSheet(marketData: marketData, cityName: cityName);
+        _sqlHandler.UpdateItemsData(marketData: marketData);
         tempData.Clear();
     }
 
