@@ -58,7 +58,7 @@ public class OrderWriter
         _itemsNaming = JsonSerializer.Deserialize<Dictionary<string, string>>(itemsNamingJson, options);
     }
 
-    public void MakeOrders(bool removeOldOrders, string cityName = "Caerleon", string[]? categories = null, int[]? tiers = null, int[]? enchantments = null)
+    public void MakeOrders(bool removeOldOrders, string cityName = "Caerleon", string[]? categories = null, string[]? except_categories = null, int[]? tiers = null, int[]? enchantments = null)
     {
         _updater.UpdateLocalDataFromGoogleSheets(cityName: cityName);
         _sender.SetForeground();
@@ -83,7 +83,9 @@ public class OrderWriter
         for (int col = 0; col < maxColumns; col += 1)
         {
             string categoryName = (col < rows[0].Count) ? (rows[0][col]?.ToString() ?? "") : "";
-            if (categories == null || (categoryName != "" && categories.Contains(categoryName)))
+            bool categoryToCheck = categories == null || (categoryName != "" && categories.Contains(categoryName));
+            bool notExcluded = except_categories == null || (categoryName != "" && !except_categories.Contains(categoryName));
+            if (categoryToCheck && notExcluded)
             {
                 for (int r = 1; r < rowCount; r++)
                 {

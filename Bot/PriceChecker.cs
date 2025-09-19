@@ -40,7 +40,7 @@ class PriceChecker
 
         var spreadSheet = _service.Spreadsheets.Get(_sheetId).Execute();
 
-        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AD").Execute();
+        ValueRange valuesResponse = _service.Spreadsheets.Values.Get(_sheetId, $"{_sheetName}!A1:AE").Execute();
         IList<IList<object>>? rows = valuesResponse.Values;
 
         int rowCount = rows.Count;
