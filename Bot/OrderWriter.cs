@@ -56,6 +56,8 @@ public class OrderWriter
         string itemsNamingJson = File.ReadAllText("items_naming.json");
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         _itemsNaming = JsonSerializer.Deserialize<Dictionary<string, string>>(itemsNamingJson, options);
+
+        _observer.Start(observingType: "request");
     }
 
     public void MakeOrders(bool removeOldOrders, string cityName = "Caerleon", string[]? categories = null, string[]? except_categories = null, int[]? tiers = null, int[]? enchantments = null)
@@ -78,7 +80,6 @@ public class OrderWriter
         int maxColumns = rows.Max(r => r.Count);
 
         _marketController.ChangeTab("create_buy_order");
-        _observer.Start(observingType: "request");
 
         for (int col = 0; col < maxColumns; col += 1)
         {
@@ -103,7 +104,7 @@ public class OrderWriter
                                         _marketController.SearchItem(searchTitle: $"{cellValue} {tier} {enchantment}");
                                         _marketController.ChooseCategory(categoryValue: _categoryValues.FindIndex(arr => arr.Contains(categoryName)));
                                         _marketController.ClickButton(buttonTitle: "buy_order");
-
+                                        _marketController.ClickButton(buttonTitle: "extend_item_statistic");
                                         Thread.Sleep(300);
 
                                         string itemDataBaseName = $"T{tier}{_itemsNaming[cellValue.ToLower()]}{((enchantment > 0) ? $"@{enchantment}" : "")}";
@@ -141,17 +142,15 @@ public class OrderWriter
                 }
             }
         }
-
-        _observer.Stop();
     }
 
     private void RemoveOldOrders()
     {
         _marketController.ChangeTab("my_orders_tab");
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 15; i++)
         {
-            for (int x = 0; x < 30; x++)
+            for (int x = 0; x < 50; x++)
             {
                 _marketController.ClickButton("cancel_order");
             }

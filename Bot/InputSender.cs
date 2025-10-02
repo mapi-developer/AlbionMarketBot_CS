@@ -57,6 +57,17 @@ public class InputSender
         Thread.Sleep(_afterActionDelayMs);
     }
 
+    public void RightClick(int[]? position)
+    {
+        if (position != null)
+        {
+            MoveMouseTo(position);
+        }
+
+        _simulator.Mouse.RightButtonClick();
+        Thread.Sleep(_afterActionDelayMs);
+    }
+
     public void TypeText(string text, int delayMs = 25)
     {
         if (string.IsNullOrEmpty(text)) return;
